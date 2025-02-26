@@ -119,7 +119,9 @@ def days_ago_iso8601(iso8601):
 
 def add_declarations_fromjson:
     if type=="object" and has("declarations") then
-        .declarations |= map( . += { _payloadFromJson: (.payloadJson|fromjson) } )
+        .declarations | map( .payloadJson|=fromjson )
+    elif type=="array" then
+        .
     else
         empty
     end
