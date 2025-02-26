@@ -126,6 +126,47 @@ def add_declarations_fromjson:
     ;
 
 
+def sanity_check($continue):
+    debug("api path: \($the_path)") |
+
+    if  # // $ref = #/components/schemas/ApiError
+        ( type=="object" and has("errors") )
+        # // example:
+        # //    {
+        # //      "httpStatus": 400,
+        # //      "errors": [
+        # //        {
+        # //          "code": "INVALID_ID",
+        # //          "description": "Managed Software Update Plan UUID, '0', is not in a proper UUID format.",
+        # //          "id": "0",
+        # //          "field": null
+        # //        }
+        # //      ]
+        # //    }
+    then 
+        debug(
+            "[ERROR] "
+            + "return code: \(.httpStatus);" 
+            + " error messages: \( if .errors|length>0 then (.errors|map([.code,.description]|join(" "))|join("; ")) else "(none)" end )"
+            ) 
+        | if $continue then . else empty end
+
+    elif  # // Many responses follow pattern of { totalCount: integer, results: array }
+          # //   but _not_ all (some return just an array)
+        ( type=="object" and has("totalCount") and has("results") and (.totalCount!=(.results|length)) ) 
+    then 
+        debug("[WARNING] totalCount: \(.totalCount?), results: \(.results|length); Try with --url-query page-size=\(.totalCount)") 
+        | if $continue then . else empty end
+
+    else
+        debug("[INFO] totalCount: \(.totalCount), results: \(.results|length)")
+        | .
+
+    end
+    ;
+
+
+
 # // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # // - Needs fixing/refactoring …                                           -
 # // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
