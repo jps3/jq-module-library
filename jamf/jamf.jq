@@ -117,6 +117,56 @@ def days_ago_iso8601(iso8601):
 # //  ││  NEEDS REORGANIZING                                                  │
 # //  ╰┴──────────────────────────────────────────────────────────────────────╯
 
+
+# //  ╭┬──────────────────────────────────────────────────────────────────────╮
+# //  ││  Computers Inventory Lookup Helpers                                  │
+# //  ╰┴──────────────────────────────────────────────────────────────────────╯
+
+def summarize_computers_inventory:
+    debug(".|type == \"\(type)\"") |
+    .results
+    | map(
+        {
+            deviceId:         .id,
+            name:             .general.name,
+            managementId:     .general.managementId,
+            lastContactEpoch: utc2epoch(.general.lastContactTime),
+            reportEpoch:      utc2epoch(.general.reportDate),
+            osVersion:        .operatingSystem.version,
+            modelIdentifier:  .hardware.modelIdentifier
+        }
+    )
+    ;
+
+# //
+# // $cludb example:
+# // [
+# //    {
+# //      "deviceId": "1637",
+# //      "name": "coppee304-mac-1",
+# //      "managementId": "e5bccf0f-32c4-4cc4-92a6-6de084f021bb",
+# //      "version": "14.7.1"
+# //    }
+# // ]
+# //
+
+def clu_by_deviceid($cludb; $deviceId):
+    # // jq --slurpfile cludb computers.json 'import "jamf" as j; .results|map( j::clu_by_deviceid(.device.deviceId) )'
+    $cludb[][] 
+    | select(.deviceId==$deviceId) 
+    ;
+
+def clu_by_managementid($cludb; $managementId):
+    # // jq --slurpfile cludb computers.json 'import "jamf" as j; .results|map( j::clu_by_managementid(.managementUUID) )'
+    $cludb[][] 
+    | select(.managementId==$managementId) 
+    ;
+
+
+# //  ╭┬──────────────────────────────────────────────────────────────────────╮
+# //  ││                                                                      │
+# //  ╰┴──────────────────────────────────────────────────────────────────────╯
+
 def add_declarations_fromjson:
     if type=="object" and has("declarations") then
         .declarations | map( .payloadJson|=fromjson )
