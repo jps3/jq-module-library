@@ -56,11 +56,33 @@ def utc8601_to_epoch(s):
     ;
 
 def utc8601_to_epoch:
-    . | strings | utc8601_to_epoch(.)
+    utc8601_to_epoch(.)
+    ;
+
+def utc2epoch(s):
+    utc8601_to_epoch(s)
     ;
 
 def utc8601_to_local8601(s):
     s | sub("\\.\\d+Z?$";"Z") | fromdateiso8601 | strflocaltime("%Y-%m-%dT%H:%M:%S%z") 
+    ;
+
+def utc2local(s):
+    utc8601_to_local8601(s)
+    ;
+
+def utc2local:
+    utc8601_to_local8601(.)
+    ;
+
+def epoch2local(t):
+    if t > (now|round) then (t/1000|round) else . end
+    | todateiso8601 
+    | utc2local 
+    ;
+
+def epoch2local:
+    epoch2local(.)
     ;
 
 def add_iso8601_localtime_from_iso8601_utc:
@@ -73,6 +95,21 @@ def add_iso8601_localtime_from_iso8601_utc:
                 . += { dateCompletedLocal: utc8601_to_local8601(.dateCompleted) }
               end
         )
+    ;
+
+def days_ago(epoch_seconds):
+    ( 
+        (now-epoch_seconds) / 86400 # // sec = 60s * 60m * 24h 
+        | round     # // decimals unnecessary
+    ) as $days_ago
+    | ($days_ago | tostring)  # // convert to string to allow appending strings next 
+    + (if $days_ago!=1 then " days" else " day" end)
+    + " ago"
+    ;
+
+def days_ago_iso8601(iso8601):
+    (utc2epoch(iso8601)/86400) as $timestamp 
+    | days_ago($timestamp)
     ;
 
 
