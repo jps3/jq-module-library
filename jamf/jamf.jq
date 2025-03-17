@@ -51,6 +51,7 @@ module {
 # //  ││  ISO 8601 timestamp utilities                                        │
 # //  ╰┴──────────────────────────────────────────────────────────────────────╯
 
+
 def utc8601_to_epoch(s):
     s | strings | sub("\\.\\d+Z?$";"Z") | fromdateiso8601
     ;
@@ -64,7 +65,10 @@ def utc2epoch(s):
     ;
 
 def utc8601_to_local8601(s):
-    s | sub("\\.\\d+Z?$";"Z") | fromdateiso8601 | strflocaltime("%Y-%m-%dT%H:%M:%S%z") 
+    s 
+    | sub("\\.\\d+Z?$";"Z")
+    | fromdateiso8601
+    | strflocaltime("%Y-%m-%dT%H:%M:%S%z") 
     ;
 
 def utc2local(s):
@@ -75,8 +79,32 @@ def utc2local:
     utc8601_to_local8601(.)
     ;
 
+# //  
+# //  
+
+def local8601_to_utc8601(s):
+    # // s  # // | sub("\\.\\d+Z?$";"Z")
+    # // | fromdateiso8601
+    # // | strflocaltime("%Y-%m-%dT%H:%M:%S%Z") 
+    debug("[NOTICE] Have not figured out how to perform this conversion within jq yet.") | s
+    ;
+
+def local2utc(s):
+    local8601_to_utc8601(s)
+    ;
+
+def local2utc:
+    local8601_to_utc8601(.)
+    ;
+
+
+# //  
+# //  
 def epoch2local(t):
-    if t > (now|round) then (t/1000|round) else . end
+    if   t > (now|round)  # // 
+    then (t/1000|round) 
+    else t 
+    end 
     | todateiso8601 
     | utc2local 
     ;
@@ -130,8 +158,10 @@ def summarize_computers_inventory:
             deviceId:         .id,
             name:             .general.name,
             managementId:     .general.managementId,
-            lastContactEpoch: utc2epoch(.general.lastContactTime),
-            reportEpoch:      utc2epoch(.general.reportDate),
+            lastContactEpoch:  utc2epoch(.general.lastContactTime),
+            lastContactTime:   .general.lastContactTime,
+            reportEpoch:       utc2epoch(.general.reportDate),
+            reportDate:       .general.reportDate,
             osVersion:        .operatingSystem.version,
             modelIdentifier:  .hardware.modelIdentifier
         }
@@ -164,7 +194,7 @@ def clu_by_managementid($cludb; $managementId):
 
 
 # //  ╭┬──────────────────────────────────────────────────────────────────────╮
-# //  ││                                                                      │
+# //  ││  plan (ddm) declarations                                             │
 # //  ╰┴──────────────────────────────────────────────────────────────────────╯
 
 def add_declarations_fromjson:
@@ -211,7 +241,7 @@ def sanity_check($continue):
         | if $continue then . else empty end
 
     else
-        debug("[INFO] totalCount: \(.totalCount), results: \(.results|length)")
+        debug("[INFO] totalCount: \(.totalCount?), results: \(.results?|length)")
         | .
 
     end

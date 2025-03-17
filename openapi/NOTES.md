@@ -3,9 +3,15 @@
 ## TODOs
 
 - Use an env var like JQ_DEBUG as flag to de-/activate `debug(...)` function calls?
+- Looking at example CrowdStrike API (`.swagger`==`"2.0"`) swagger file it does not follow the same structural pattern as the Jamf Pro API (`.openapi`==`"3.0.1"`) swagger file.
+    - assumptions about hierarchical structure cannot be assumed >:-/
+    
 
 
 ## Ideas
+
+- (root)
+    - 
 
 - paths
     - list paths like …
@@ -684,3 +690,22 @@ get
 | `/v3/sso/history`                                                                                                      | `get,post`              |
 | `/v3/sso/metadata/download`                                                                                            | `get`                   |
 | `/v4/enrollment`                                                                                                       | `get,put`               |
+
+- - - 
+
+# SCRATCH
+
+```javascript
+paths 
+| select( last=="deprecated" ) 
+| map( . |= .[0:rindex("deprecated")] )  # // only keep array entries until but not including "deprecated"
+| reduce .[] as $section ( {}; .[$section[0]] += [$section[1:]] ) 
+| to_entries 
+| map( 
+    .key as $key 
+    | .value 
+    | reduce .[] as $item ( {}; .[$item[0]] += $item[1:] ) 
+    | { key: $key, value: . } 
+  ) 
+| from_entries'
+```
